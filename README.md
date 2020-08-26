@@ -1,4 +1,4 @@
-# High-order locally corrected trapezoidal rule for Laplace and Helmholtz layer potentials on surfaces in 3D
+# ZetaTrap3D: High-order locally corrected trapezoidal rule for Laplace and Helmholtz layer potentials on surfaces in 3D
 
 This is the MATLAB code accompanying the manuscript: 
 
@@ -9,6 +9,12 @@ Let's consider a Laplace or Helmholtz layer potential from a smooth surface to a
 Author: Bowei Wu, 2020/6/28
 
 Also contain supporting functions modified from Alex Barnett's [BIE3D](https://github.com/ahbarnett/BIE3D) package
+
+### Example
+
+![](convergence_on_patch.pdf)
+
+ZetaTrap approximations of layer potentials on a surface patch with a smooth and compactly supported density function. Target is located at the center of the patch. Third-order and fifth-order convergence are observed in (b) for the Laplace potentials and (c) for the Helmholtz potentials. (This figure is extracted from the [manuscript](https://arxiv.org/abs/2007.02512).)
 
 ### Description of the main test files:
 

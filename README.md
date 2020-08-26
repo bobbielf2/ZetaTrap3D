@@ -12,7 +12,7 @@ Also contain supporting functions modified from Alex Barnett's [BIE3D](https://g
 
 ### Example
 
-![](convergence_on_patch.pdf)
+![](convergence_on_patch.png)
 
 ZetaTrap approximations of layer potentials on a surface patch with a smooth and compactly supported density function. Target is located at the center of the patch. Third-order and fifth-order convergence are observed in (b) for the Laplace potentials and (c) for the Helmholtz potentials. (This figure is extracted from the [manuscript](https://arxiv.org/abs/2007.02512).)
 

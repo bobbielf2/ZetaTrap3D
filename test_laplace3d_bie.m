@@ -23,7 +23,7 @@ bvp = 'nd'; % n = Neumann, d = Dirichlet, nd = both
 NN = round(2.^(3:0.5:6));
 errN = []; errD = [];
 for Nv = NN     % num of nodes in the v-direction
-    Nu = Nv;    % assume Nu = Nv
+    Nu = Nv;    % assume Nu = Nv (could be different)
     s = quadr_doubleptr(s, [Nu,Nv]);
     
     % Diri & Neu data on grid

@@ -35,9 +35,10 @@ end
 function [As,Ad,Asn] = CorrTrap1pt(s)
 % 2-periodic trapezoidal rule 1-point correction
 
-% calculate coefficient (fundamental forms)
-E = dot(s.xu,s.xu); F = dot(s.xu,s.xv); G = dot(s.xv,s.xv);
-e = dot(s.xuu,s.nxj); f = dot(s.xuv,s.nxj); g = dot(s.xvv,s.nxj);
+% calculate coefficient (fundamental forms with proper scaling)
+Efac = s.Nv/s.Nu; Gfac = 1/Efac; % scaling factors assoc. w. E & G
+E =  dot(s.xu,s.xu)*Efac; F =  dot(s.xu,s.xv); G =  dot(s.xv,s.xv)*Gfac;
+e =dot(s.xuu,s.nxj)*Efac; f =dot(s.xuv,s.nxj); g =dot(s.xvv,s.nxj)*Gfac;
 % O(h) errs
 [Cs0,Cd0] = epstein_zeta(1,E,F,G,e,f,g); Cs0 = -Cs0;
 
@@ -46,13 +47,12 @@ e = dot(s.xuu,s.nxj); f = dot(s.xuv,s.nxj); g = dot(s.xvv,s.nxj);
 Ad = Lap3dDLPmat(s,s);
 
 % correction
-h = 2*pi/s.Nu;
-c = 1/4/pi;
+hc = 1/sqrt(s.Nu*s.Nv)/2; 
 N = size(As,1);
-ind = sub2ind([N,N], 1:N, 1:N); ind = ind(:);
-As(ind)  = Cs0.*s.sp*(h*c);
-Ad(ind)  = Cd0*(h*c);
-Asn(ind) = Cd0*(h*c);
+ind = sub2ind([N,N], 1:N, 1:N);
+As(ind)  = Cs0.*s.sp*hc;
+Ad(ind)  = Cd0*hc;
+Asn(ind) = Cd0*hc;
 end
 
 function [As,Ad,Asn] = CorrTrap9pt(s,sub)
@@ -70,7 +70,7 @@ Ad = Lap3dDLPmat(s,s);
 
 % correction
 N = size(s.x,2);
-h = 2*pi/s.Nu;
+h = 2*pi/sqrt(s.Nu*s.Nv);
 hc = h/4/pi;
 jac = s.sp(:);
 
@@ -148,21 +148,22 @@ function [Cd0,Cd01,Cd1,Cd2,Cd3,Cd4,Cd5,...
 % * Csnx == Cdx, except Csn01, Csn1, Csn2 are different
 
 % compute coefficients of expansion of the geometry
-E = dot(s.xu,s.xu); F = dot(s.xu,s.xv); G = dot(s.xv,s.xv); % 1st fund form
+Efac = s.Nv/s.Nu; Gfac = 1/Efac; % scaling factors assoc. w. E & G
+E =  dot(s.xu,s.xu)*Efac; F =  dot(s.xu,s.xv); G =  dot(s.xv,s.xv)*Gfac; % scaled 1st fund form
 [Lb2,Lb3,Lb4,Lb5,Lb6,Lb8,La3,La4,La6,Lc3,Lc4,Lc6] = wigner_type_coeff(s);
 
 % compute \square^{(1)}, \square^{(2)} & \square^{(3)}
 % all second & third derivatives of Epstein zeta Z(s;E,F,G)
 s = -1;
-[~, d1_E, d2_E, d3_E, d4_E] = epstein_zeta(s,E,F,G,1,0,0);
-[~, d1_G, d2_G, d3_G, d4_G] = epstein_zeta(s,E,F,G,0,0,1);
+[~, d1_E, d2_E, d3_E, d4_E] = epstein_zeta(s,E,F,G,Efac,0,0);
+[~, d1_G, d2_G, d3_G, d4_G] = epstein_zeta(s,E,F,G,0,0,Gfac);
 [~, d1_F, d2_F, d3_F, d4_F] = epstein_zeta(s,E,F,G,0,0.5,0);
-[~,~, d2_EpF, d3_EpF, d4_EpF] = epstein_zeta(s,E,F,G,1,.5,0);
-[~,~,      ~,      ~,d4_Ep2F] = epstein_zeta(s,E,F,G,1,1,0);
-[~,~,      ~, d3_EmF, d4_EmF] = epstein_zeta(s,E,F,G,1,-.5,0);
-[~,~, d2_GpF, d3_GpF, d4_GpF] = epstein_zeta(s,E,F,G,0,.5,1);
-[~,~,      ~,      ~,d4_Gp2F] = epstein_zeta(s,E,F,G,0,1,1);
-[~,~,      ~, d3_GmF, d4_GmF] = epstein_zeta(s,E,F,G,0,-.5,1);
+[~,~, d2_EpF, d3_EpF, d4_EpF] = epstein_zeta(s,E,F,G,Efac,.5,0);
+[~,~,      ~,      ~,d4_Ep2F] = epstein_zeta(s,E,F,G,Efac,1,0);
+[~,~,      ~, d3_EmF, d4_EmF] = epstein_zeta(s,E,F,G,Efac,-.5,0);
+[~,~, d2_GpF, d3_GpF, d4_GpF] = epstein_zeta(s,E,F,G,0,.5,Gfac);
+[~,~,      ~,      ~,d4_Gp2F] = epstein_zeta(s,E,F,G,0,1,Gfac);
+[~,~,      ~, d3_GmF, d4_GmF] = epstein_zeta(s,E,F,G,0,-.5,Gfac);
 sq2 = [d2_E; (d2_EpF-d2_E-d2_F)/2; d2_F; (d2_GpF-d2_F-d2_G)/2; d2_G];
 sq3 = [d3_E; (d3_EpF-d3_EmF-2*d3_F)/6; (d3_EpF+d3_EmF-2*d3_E)/6;...
     d3_F; (d3_GpF+d3_GmF-2*d3_G)/6; (d3_GpF-d3_GmF-2*d3_F)/6; d3_G];
@@ -174,7 +175,7 @@ sq4 = [d4_E; (6*d4_EpF-2*d4_EmF-d4_Ep2F-3*d4_E+12*d4_F)/24;...
     (6*d4_GpF-2*d4_GmF-d4_Gp2F-3*d4_G+12*d4_F)/24; d4_G];
 
 % D0
-[Cs0,Cd0] = epstein_zeta(1,E,F,G,Lb2(1,:),Lb2(2,:)/2,Lb2(3,:));
+[Cs0,Cd0] = epstein_zeta(1,E,F,G,Lb2(1,:)*Efac,Lb2(2,:)/2,Lb2(3,:)*Gfac);
 Cs0 = -Cs0(:); Cd0 = Cd0(:);                            % O(h) errs
 Cd01 = (dot(Lb4,sq2)+2*dot(Lb6,sq3)+dot(Lb8,sq4)).';    % DLP O(h^3) err
 Cs01 =-(2*dot(La4,sq2)+dot(La6,sq3)).';                 % SLP O(h^3) err

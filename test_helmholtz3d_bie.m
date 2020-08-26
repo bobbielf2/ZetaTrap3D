@@ -1,5 +1,10 @@
 % This example runs a convergence test on solving Helmholtz BVPs exterior 
 % to a toroidal surface using 9-point zeta-correction of the trapezoidal rule
+% See the manuscript [1], Example 2, for more details.
+%
+% [1] Wu, B., & Martinsson, P.G. (2020, arXiv:2007.02512). Corrected
+%     Trapezoidal Rules for Boundary Integral Equations in Three
+%     Dimensions.
 
 % define toroidal surface
 m = 2; % petal number of generating curve

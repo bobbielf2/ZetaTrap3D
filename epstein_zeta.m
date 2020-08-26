@@ -2,7 +2,7 @@ function [S,Sd1,Sd2,Sd3,Sd4,Ssp2,Sd1sp2] = epstein_zeta(s,E,F,G,L,M,N)
 % Evaluate the Epstein zeta function Z(s) defined by
 %       Z(s) = \sum_{(i,j)\neq(0,0)} (E*i^2+2*F*i*j+G*j^2)^(-s/2)
 % for Re(s)>2, and analytically continued to the whole complex plane except
-% a simple pole at s=2.
+% a simple pole at s=2. See the manuscript [1], Appendix E, for more details.
 %
 % Output:
 %   S      = Z(s)
@@ -12,6 +12,10 @@ function [S,Sd1,Sd2,Sd3,Sd4,Ssp2,Sd1sp2] = epstein_zeta(s,E,F,G,L,M,N)
 %   Sd4    = (L*{d/dE} + M*{d/dF} + N*{d/dG})^4 Z(s)
 %   Ssp2   = Z(s+2)
 %   Sd1sp2 = (L*{d/dE} + M*{d/dF} + N*{d/dG}) Z(s+2)
+%
+% [1] Wu, B., & Martinsson, P.G. (2020, arXiv:2007.02512). Corrected
+%     Trapezoidal Rules for Boundary Integral Equations in Three
+%     Dimensions.
 %
 % Bowei Wu, 2020/3/30
 %           4/7 add 1st derivative

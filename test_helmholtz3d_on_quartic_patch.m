@@ -1,5 +1,10 @@
 % O(h^5) corrected trapezoidal rule for Helmholtz double-layer potential,
 % single-layer potential, and its normal gradient, on a surface patch in 3D
+% See the manuscript [1], Example 1, for more details.
+%
+% [1] Wu, B., & Martinsson, P.G. (2020, arXiv:2007.02512). Corrected
+%     Trapezoidal Rules for Boundary Integral Equations in Three
+%     Dimensions.
 
 % generate random quartic patch
 m = randi(4); % petal number of generating curve

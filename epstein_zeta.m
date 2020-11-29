@@ -99,7 +99,7 @@ for i = 0:n-1     % right-half ij-plane & j-axis
     end
 end
 % Postprocessing: symmetry add-back & determinant scale-back
-if isreal(s1) && all(s1>=0)
+if isreal(s1)
     Cs1 = (pi./J).^s1 ./ gamma(s1); % scaling constant
 else
     Cs1 = (pi./J).^s1 ./ igamma(s1,0);

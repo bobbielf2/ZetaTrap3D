@@ -10,6 +10,11 @@ Author: Bowei Wu, 2020/6/28
 
 Also contain supporting functions modified from Alex Barnett's [BIE3D](https://github.com/ahbarnett/BIE3D) package
 
+### Note on MATLAB version
+
+- If you are using a MATLAB version before R2017b, please rename the `Vecnorm.m` function to lower case `vecnorm.m` to use this code.
+- In case you would like to use the Epstein zeta function `epstein_zeta(s,...)` with a complex `s` (which is not needed for the purpose of quadrature correction), the `igamma` function from the Symbolic Math Toolbox is required.
+
 ### Example
 
 ![](convergence_on_patch.png)

@@ -50,7 +50,7 @@ QA      = @(i,j) E*i^2+2*F*i*j+G*j^2;
 QB      = @(i,j) L*i^2+2*M*i*j+N*j^2;
 
 % Determine summation cutoffs based on decay of incomplete gamma func
-lambda = min((E+G)/2 - sqrt((E-G).^2+4*F.^2)/2,[],'all'); % min eigenvalue of Q
+lambda = min(min((E+G)/2 - sqrt((E-G).^2+4*F.^2)/2)); % min eigenvalue of Q
 n = floor(sqrt(33/pi./lambda))+3;
 
 % summation, exclude origin

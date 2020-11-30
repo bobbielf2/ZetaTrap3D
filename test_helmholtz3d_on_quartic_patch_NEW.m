@@ -25,6 +25,7 @@ a = randn(); b = randn();
 f = @(u,v) (a*cos(a+u)+b*sin(b+v)).* exp(-40*((u.^2+v.^2)/rpat^2).^4); 
 
 % convergence test
+ka = 10*(randn()+1i*randn()); % random wavenumber
 hh = 0.5.^([3:8,10]);
 val_d = []; val_s = []; val_sn = [];
 for h = hh
@@ -37,32 +38,52 @@ for h = hh
     [rvec,r_u,r_v] = quarticSurf(u,v,ru,rv,ruu,ruv,rvv,ruuu,ruuv,...
                                 ruvv,rvvv,ruuuu,ruuuv,ruuvv,ruvvv,rvvvv);	
 	% plot surface
-   	if h == 2^-5, figure; subplot(1,2,1), PlotPatch(n,rvec,sig,ru,rv); end 
+   	if h == 2^-5, figure(1); subplot(2,1,1), PlotPatch(n,rvec,sig,ru,rv); end 
     
     % define kernels via punctured trapezoidal rule
     r2 = dot(rvec,rvec);  	% r^2
     r = sqrt(r2);          	% r
-    ker_r1 = 1./r*h^2;   	% 1/r kernel (for SLP)
-    ker_r3 = 1./(r2.*r)*h^2;% 1/r^3 kernel (for DLP & SLPn)
+    ker_s = exp(1i*ka*r)./r*h^2;	% SLP
+    ker_d0 = exp(1i*ka*r).*(1-1i*ka*r)./(r2.*r)*h^2; % DLP & SLPn
     ind = find(r2==0);     	% location index of singular pt
-    ker_r1(ind) = 0;       	% punctured trapezoidal rule
-    ker_r3(ind) = 0;
+    ker_s(ind) = 1i*ka*h^2;         % constant term correction
+    ker_d0(ind) = 0;                % punctured trapezoidal rule
     
     % zeta correction
     ord = 5;                    % desired order of convergence
     Q = E*u.^2+2*F*u.*v+G*v.^2; % 1st fundamental form
     r2mQ = r2-Q;                % smooth factors for product integration
-    ker_r1 = zeta_correct_r1(ker_r1,ind,h,r2mQ,ord,E,F,G); % 1/r kernel correction
-    ker_r3 = zeta_correct_r3(ker_r3,ind,h,r2mQ,ord,E,F,G); % 1/r^3 kernel correction
-    
+    if 0    % use specific r, 1/r, 1/r^3 corrections
+        % SLP: 1/r+1i*ka-ka^2*r/2+...
+        ker_s = zeta_correct_r1(ker_s,ind,h,r2mQ,1,ord,E,F,G);      % 1/r
+        ker_s = zeta_correct_r(ker_s,ind,h,r2mQ,-ka^2/2,ord,E,F,G);	% -k^2/2*r
+        % DLP & SLPn: 1/r^3+ka^2/2r+...
+        offset = 1; % smoothness offset, kernel has an extra O(h^2) smoothness
+        ker_d0 = zeta_correct_r3(ker_d0,ind,h,r2mQ,1,ord,E,F,G,offset);    	% 1/r^3
+        ker_d0 = zeta_correct_r1(ker_d0,ind,h,r2mQ,ka^2/2,ord,E,F,G,offset);% k^2/2/r
+    else    % use the generic r^p correction
+        % SLP: 1/r+1i*ka-ka^2*r/2+...
+        p = -1; c = 1;
+        ker_s = zeta_correct_rp(ker_s,p,ind,h,r2mQ,c,ord,E,F,G);  	% 1/r
+        p = 1; c = -ka^2/2;
+        ker_s = zeta_correct_rp(ker_s,p,ind,h,r2mQ,c,ord,E,F,G);    % -k^2/2*r
+        % DLP & SLPn: 1/r^3+ka^2/2r+...
+        offset = 1; % smoothness offset, kernel has an extra O(h^2) smoothness
+        p = -3; c = 1;
+        ker_d0 = zeta_correct_rp(ker_d0,p,ind,h,r2mQ,c,ord,E,F,G,offset);	% 1/r^3
+        p = -1; c = ka^2/2;
+        ker_d0 = zeta_correct_rp(ker_d0,p,ind,h,r2mQ,c,ord,E,F,G,offset);  % k^2/2/r
+    end
+
     % multiply back smooth components for each kernel
     nJ = cross(r_u,r_v);% normal vec r_u x r_v (not normalized)
     J = vecnorm(nJ);    % jacobian
     nJ0 = cross(ru,rv); % normal vec at 0
     n0 = nJ0/norm(nJ0); % unit normal at 0
-    ker_s = J.*ker_r1;                   % SLP: jacobian/r
-    ker_sn = sum(rvec.*n0,1).*J.*ker_r3; % SLPn: (r.n0)*jacobian/r^3
-    ker_d = -dot(rvec,nJ).*ker_r3;       % DLP: -r.(r_u x r_v)/r^3
+    ker_s = J.*ker_s;                   % SLP: jacobian
+    ker_d = -dot(rvec,nJ).*ker_d0;      % DLP: -r.(r_u x r_v)
+    ker_sn=sum(rvec.*n0,1).*J.*ker_d0;  % SLPn: (r.n0)*jacobian
+    
     
     val_s = [val_s; ker_s*sig];     % SLP vals
     val_d = [val_d; ker_d*sig];     % DLP vals
@@ -74,9 +95,9 @@ err_s = abs(val_s(1:end-1)-val_s(end));
 err_d = abs(val_d(1:end-1)-val_d(end));
 err_sn= abs(val_sn(1:end-1)-val_sn(end));
 hh = hh(1:end-1).';
-subplot(1,2,2)
+subplot(2,1,2)
 loglog(hh,hh.^ord/hh(end)^ord*err_d(end)*2,'k--',hh,err_s,'o-',hh,err_d,'v-',hh,err_sn,'*-');
-title('Laplace potentials with random density','interpreter','latex')
+title(sprintf('Helmholtz $\\kappa=%.2f%+.2fi$',real(ka),imag(ka)),'interpreter','latex')
 xlabel('$h$','interpreter','latex')
 ylabel('error','interpreter','latex','rotation',90)
 legend({['$O(h^',num2str(ord),')$'],'SLP','DLP','SLP grad'},'interpreter','latex','location','nw')
@@ -108,46 +129,113 @@ r_u = ru+dr2u+dr3u+dr4u;
 r_v = rv+dr2v+dr3v+dr4v;
 end
 
-function ker = zeta_correct_r1(ker,ind,h,r2mQ,ord,E,F,G)
+function ker = zeta_correct_r(ker,ind,h,r2mQ,c,ord,E,F,G,offset)
+% zeta correction for r kernel on surface
+% Input:
+%   ker = kernel matrix via punctured trapezoidal rule
+%   ind = index location of the singular point
+%   h = mesh spacing
+%   r2mQ = r^2-Q
+%   c = canstant prefactor for the kernel correction
+%   ord = desired order of convergence
+%   E,F,G = first fundamental form coeffs
+%   offset = stencil offset parameter, assume an O(h^(2*offset)) extra
+%            smoothness for the non-singular part of the kernel
+if nargin<10, offset=0; end
+M = ceil((ord-5)/2)-offset;
+if M<0, return; end     % no correction needed
+siz = sqrt(numel(ker))*[1,1];   % mesh size
+[sub1,sub2] = ind2sub(siz,ind); % subscripts of singular point
+for m = 0:2*M
+    l1 = ceil(3*m/2)+offset;% stencil inner layer = l1
+    l2 = M+m+offset;     	% stencil outer layer = l2+1
+    Qpow = m-0.5;           % power of the quadratic form
+    fac = c*binom(1/2,m)*h^(3-2*m)*r2mQ.^m;	% compute smooth factors
+    tau = zeta_weights(l1,l2,Qpow,E,F,G);   % compute correction weights
+    ker = zeta_correct(ker,sub1,sub2,l1,l2,fac,tau); % apply correction
+end
+end
+
+function ker = zeta_correct_r1(ker,ind,h,r2mQ,c,ord,E,F,G,offset)
 % zeta correction for 1/r kernel on surface
 % Input:
 %   ker = kernel matrix via punctured trapezoidal rule
 %   ind = index location of the singular point
 %   h = mesh spacing
 %   r2mQ = r^2-Q
+%   c = canstant prefactor for the kernel correction
 %   ord = desired order of convergence
 %   E,F,G = first fundamental form coeffs
-M = ceil((ord-3)/2);
+%   offset = stencil offset parameter, assume an O(h^(2*offset)) extra
+%            smoothness for the non-singular part of the kernel
+if nargin<10, offset=0; end
+M = ceil((ord-3)/2)-offset;
+if M<0, return; end
 siz = sqrt(numel(ker))*[1,1];   % mesh size
 [sub1,sub2] = ind2sub(siz,ind); % subscripts of singular point
 for m = 0:2*M
-    l1 = ceil(3*m/2);   % stencil inner layer = l1
-    l2 = M+m;           % stencil outer layer = l2+1
-    Qpow = m+0.5;       % power of the quadratic form
-    fac = binom(-1/2,m)*h^(1-2*m)*r2mQ.^m;	% compute smooth factors
+    l1=ceil(3*m/2)+offset;  % stencil inner layer = l1
+    l2=M+m+offset;       	% stencil outer layer = l2+1
+    Qpow = m+0.5;           % power of the quadratic form
+    fac = c*binom(-1/2,m)*h^(1-2*m)*r2mQ.^m;% compute smooth factors
     tau = zeta_weights(l1,l2,Qpow,E,F,G);   % compute correction weights
     ker = zeta_correct(ker,sub1,sub2,l1,l2,fac,tau); % apply correction
 end
 end
 
-function ker = zeta_correct_r3(ker,ind,h,r2mQ,ord,E,F,G)
+function ker = zeta_correct_r3(ker,ind,h,r2mQ,c,ord,E,F,G,offset)
 % zeta correction for 1/r^3 kernel on surface
 % Input:
 %   ker = kernel matrix via punctured trapezoidal rule
 %   ind = index location of the singular point
 %   h = mesh spacing
 %   r2mQ = r^2-Q
+%   c = canstant prefactor for the kernel correction
 %   ord = desired order of convergence
 %   E,F,G = first fundamental form coeffs
-M = ceil((ord-3)/2);
+%   offset = stencil offset parameter, assume an O(h^(2*offset)) extra
+%            smoothness for the non-singular part of the kernel
+if nargin<10, offset=0; end
+M = ceil((ord-1)/2)-offset;
+if M<0, return; end
 siz = sqrt(numel(ker))*[1,1];   % mesh size
 [sub1,sub2] = ind2sub(siz,ind); % subscripts of singular point
 for m = 0:2*M
-    l1=ceil(3*m/2)+1;   % stencil inner layer = l1
-    l2=M+m+1;           % stencil outer layer = l2+1
-    Qpow = m+1.5;       % power of the quadratic form
-    fac = binom(-3/2,m)*h^(-1-2*m)*r2mQ.^m;	% compute smooth factors
-    tau = zeta_weights(l1,l2,Qpow,E,F,G);   % compute correction weights
+    l1=ceil(3*m/2)+offset;	% stencil inner layer = l1
+    l2=M+m+offset;        	% stencil outer layer = l2+1
+    Qpow = m+1.5;           % power of the quadratic form
+    fac = c*binom(-3/2,m)*h^(-1-2*m)*r2mQ.^m;   % compute smooth factors
+    tau = zeta_weights(l1,l2,Qpow,E,F,G);       % compute correction weights
+    ker = zeta_correct(ker,sub1,sub2,l1,l2,fac,tau); % apply correction
+end
+end
+
+function ker = zeta_correct_rp(ker,p,ind,h,r2mQ,c,ord,E,F,G,offset)
+% zeta correction for r^p kernel on surface
+% Input:
+%   ker = kernel matrix via punctured trapezoidal rule
+%   p   = power in r^p
+%   ind = index location of the singular point
+%   h = mesh spacing
+%   r2mQ = r^2-Q
+%   c = canstant prefactor for the kernel correction
+%   ord = desired order of convergence
+%   E,F,G = first fundamental form coeffs
+%   offset = stencil offset parameter, assume an O(h^(2*offset)) extra
+%            smoothness for the non-singular part of the kernel
+if mod(p,2)==0 && p >= 0, warning('p=%d,r^p is smooth'); return; end
+if nargin<11, offset=0; end
+% calculate M, such that 2M+1 terms in the kernel expansion needs correction
+M = ceil((ord-p)/2)-2-offset;
+if M < 0, return; end
+siz = sqrt(numel(ker))*[1,1];   % mesh size
+[sub1,sub2] = ind2sub(siz,ind); % subscripts of singular point
+for m = 0:2*M               % correct 2M+1 terms in the kernel expansion
+    l1=ceil(3*m/2)+offset;	% stencil inner layer = l1
+    l2=M+m+offset;        	% stencil outer layer = l2+1
+    Qpow = m-p/2;           % power of the quadratic form in the m-th term
+    fac = c*binom(p/2,m)*h^(2+p-2*m)*r2mQ.^m; 	% compute smooth factors
+    tau = zeta_weights(l1,l2,Qpow,E,F,G);       % compute correction weights
     ker = zeta_correct(ker,sub1,sub2,l1,l2,fac,tau); % apply correction
 end
 end

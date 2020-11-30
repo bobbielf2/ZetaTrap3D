@@ -120,8 +120,14 @@ if numel(s) > 1, S(s==0)=-1; Ssp2(s==-2)=-1; end % handle exception: Z(0)=-1.
 
 function [gs,gsp1,gsp2,gsp3,gsp4] = incgamma(s,x)
 % My customed incomplet gamma function
-% When isreal(s), use gammainc(x,s,'upper') (fast) instead of igamma(s,x) (slow)
-% When s<0, use recursion, since gammainc only take s>0
+% When isreal(s), use gammainc(x,s,'upper') or expint(x) (FAST) 
+% instead of igamma(s,x) (SLOW); in particular:
+%   - When s<0, use recursion, since gammainc only take s>0
+%   - When s=0, use expint(x) == gammainc(x,ss,'upper')*gamma(ss)
+% Input:
+%   (s,x) are the two arguments of the incomplete gamma function defined as
+%       incgamma(s,x) = \int_1^\infty t^{s-1}*exp(-x*t) dt
+%                     = x^{-s} \int_x^\infty t^{s-1}*exp(-t) dt
 % Output:
 %   gs   == igamma(s,x)*x^(-s)
 %   gsp1 == igamma(s+1,x)*x^(-(s+1))
@@ -130,11 +136,17 @@ function [gs,gsp1,gsp2,gsp3,gsp4] = incgamma(s,x)
 %   gsp4 == igamma(s+3,x)*x^(-(s+4))
 
 if isreal(s)
-    if numel(s) == 1 && s < 0
+    if numel(s) == 1 && s <= 0
         k = -floor(s);
         ss = s + k;
         gg = zeros([size(x),k+1]);
-        gg(:,:,1) = gammainc(x,ss,'upper').*gamma(ss).*x.^(-ss);
+        if ss == 0
+            gg(:,:,1) = expint(x).*x.^(-ss);
+            % expint(x) is equivalent to (but MUCH faster than) igamma(0,x) from the symbolic toolbox
+        else
+            gg(:,:,1) = gammainc(x,ss,'upper').*gamma(ss).*x.^(-ss);
+            % gammainc(x,ss,'upper').*gamma(ss) is equivalent to (but MUCH faster than) igamma(0,x) from the symbolic toolbox
+        end
         ex = exp(-x);
         for i = 1:k
             ss = ss - 1;

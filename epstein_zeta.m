@@ -116,102 +116,7 @@ if nargout > 5
     Sd1sp2 = 2*Sd1sp2.*Cs1p1 - (s1+1).*H.*Ssp2;
 end
 if numel(s) > 1, S(s==0)=-1; Ssp2(s==-2)=-1; end % handle exception: Z(0)=-1.
-
-
-function [gs,gsp1,gsp2,gsp3,gsp4] = incgamma(s,x)
-% My customed incomplet gamma function
-% When isreal(s), use gammainc(x,s,'upper') or expint(x) (FAST) 
-% instead of igamma(s,x) (SLOW); in particular:
-%   - When s<0, use recursion, since gammainc only take s>0
-%   - When s=0, use expint(x) == gammainc(x,ss,'upper')*gamma(ss)
-% Input:
-%   (s,x) are the two arguments of the incomplete gamma function defined as
-%       incgamma(s,x) = \int_1^\infty t^{s-1}*exp(-x*t) dt
-%                     = x^{-s} \int_x^\infty t^{s-1}*exp(-t) dt
-% Output:
-%   gs   == igamma(s,x)*x^(-s)
-%   gsp1 == igamma(s+1,x)*x^(-(s+1))
-%   gsp2 == igamma(s+2,x)*x^(-(s+2))
-%   gsp3 == igamma(s+3,x)*x^(-(s+3))
-%   gsp4 == igamma(s+3,x)*x^(-(s+4))
-
-if isreal(s)
-    if numel(s) == 1 && s <= 0
-        k = -floor(s);
-        ss = s + k;
-        gg = zeros([size(x),k+1]);
-        if ss == 0
-            gg(:,:,1) = expint(x).*x.^(-ss);
-            % expint(x) is equivalent to (but MUCH faster than) igamma(0,x) from the symbolic toolbox
-        else
-            gg(:,:,1) = gammainc(x,ss,'upper').*gamma(ss).*x.^(-ss);
-            % gammainc(x,ss,'upper').*gamma(ss) is equivalent to (but MUCH faster than) igamma(0,x) from the symbolic toolbox
-        end
-        ex = exp(-x);
-        for i = 1:k
-            ss = ss - 1;
-            gg(:,:,i+1) = (gg(:,:,i).*x-ex)./ss;
-        end
-        gs = gg(:,:,end);
-        if nargout > 1
-            if k > 3
-                gsp1 = gg(:,:,k);
-                gsp2 = gg(:,:,k-1);
-                gsp3 = gg(:,:,k-2);
-                gsp4 = gg(:,:,k-3);
-            elseif k == 3
-                gsp1 = gg(:,:,k);
-                gsp2 = gg(:,:,k-1);
-                gsp3 = gg(:,:,k-2);
-                gsp4 = ((s+3).*gsp3+ex)./x;
-            elseif k == 2
-                gsp1 = gg(:,:,k);
-                gsp2 = gg(:,:,k-1);
-                gsp3 = ((s+2).*gsp2+ex)./x;
-                gsp4 = ((s+3).*gsp3+ex)./x;
-            elseif k == 1
-                gsp1 = gg(:,:,k);
-                gsp2 = ((s+1).*gsp1+ex)./x;
-                gsp3 = ((s+2).*gsp2+ex)./x;
-                gsp4 = ((s+3).*gsp3+ex)./x;
-            end
-        end
-    else
-        gs = gammainc(x,s,'upper').*gamma(s).*x.^(-s);
-        if nargout > 1
-            ex = exp(-x);
-            gsp1 = (s.*gs+ex)./x;
-            gsp2 = ((s+1).*gsp1+ex)./x;
-            gsp3 = ((s+2).*gsp2+ex)./x;
-            gsp4 = ((s+3).*gsp3+ex)./x;
-        end
-    end
-else
-    gs = igamma(s,x).*x.^(-s);
-    if nargout > 1
-        ex = exp(-x);
-        gsp1 = (s.*gs+ex)./x;
-        gsp2 = ((s+1).*gsp1+ex)./x;
-        gsp3 = ((s+2).*gsp2+ex)./x;
-        gsp4 = ((s+3).*gsp3+ex)./x;
-    end
 end
-
-
-% verify answer
-if 0
-    g_exact = igamma(s,x).*x.^(-s);
-    gp_exact = igamma(s+1,x).*x.^(-(s+1));
-    gpp_exact = igamma(s+2,x).*x.^(-(s+2));
-    gppp_exact = igamma(s+3,x).*x.^(-(s+3));
-    gpppp_exact = igamma(s+4,x).*x.^(-(s+4));
-    fprintf('g: exact = %.15e, computed = %.15e\n',g_exact,gs)
-    fprintf('gp: exact = %.15e, computed = %.15e\n',gp_exact,gsp1)
-    fprintf('gpp: exact = %.15e, computed = %.15e\n',gpp_exact,gsp2)
-    fprintf('gppp: exact = %.15e, computed = %.15e\n',gppp_exact,gsp3)
-    fprintf('gpppp: exact = %.15e, computed = %.15e\n',gpppp_exact,gsp4)
-end
-
 
 function test_epstein_zeta
 % unit testing
@@ -274,3 +179,4 @@ fprintf('your output:\t[(d^2/dF^2)Z(s)/4, (d^2/dEdG)Z(s)] = [%f, %f] the same? (
 fprintf('fdm approx:\t[(d^3/dE^2dG)Z(s), (d^3/dEdF^2)Z(s)/4] = [%f, %f] the same?\n',Sd3_EEG_approx,Sd3_EFF_approx/4)
 fprintf('your output:\t[(d^3/dE^2dG)Z(s), (d^3/dEdF^2)Z(s)/4] = [%f, %f] the same? (should be the same as prev line, too)\n',Sd3_EEG,Sd3_EFF/4)
 fprintf('your output:\t[(d^4/dE^2dG^2)Z(s), (d^4/dF^4)Z(s)/16] = [%f, %f] the same?\n',Sd4_EEGG,Sd4_F/16)
+end

@@ -13,7 +13,7 @@ Also contain supporting functions modified from Alex Barnett's [BIE3D](https://g
 ### Note on MATLAB version
 
 - If you are using a MATLAB version before R2017b, please rename the `Vecnorm.m` function to lower case `vecnorm.m` to use this code.
-- In case you would like to use the Epstein zeta function `epstein_zeta(s,...)` with a complex `s` (which is not needed for the purpose of quadrature correction), the `igamma` function from the Symbolic Math Toolbox is required.
+- In case you would like to feed a complex `s` into the Epstein zeta function `epstein_zeta(s,...)` or the custom upper incomplete gamma function `incgamma(s,x)` (which is not needed for the purpose of quadrature correction), the `igamma` function from the Symbolic Math Toolbox is required (which is slow).
 
 ### Example
 
@@ -29,6 +29,7 @@ ZetaTrap approximations of layer potentials on a surface patch with a smooth and
 Supporting functions:
 
 * `epstein_zeta.m` : evaluation of the Epstein zeta function and its parametric derivatives.
+* `incgamma.m` : custom fast implementation of the (scaled) upper incomplete gamma function that takes negative arguments
 * `Lap3dLocCorr.m` : construct matrices associated with the Laplace layer potentials on a surface using locally corrected trapezoidal rule
 * `Helm3dLocCorr.m` : construct matrices associated with the Helmholtz layer potentials on a surface using locally corrected trapezoidal rule
 * `Lap3dSLPmat.m`, `Lap3dDLPmat.m` : construct matrices associated with Laplace layer potentials using native quadratures

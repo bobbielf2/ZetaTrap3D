@@ -74,7 +74,7 @@ for i = 0:n-1     % right-half ij-plane & j-axis
         Sd4 = Sd4+gp4.*xsq.^4-6*gp3.*xsq.^2.*xsq2+...
               gp2.*(4*xsq.*xsq3+3*xsq2.^2)-gp1.*xsq4;
         if nargout > 5
-            Ssp2 = Ssp2+g1p1-(g2.*x-ex)/s1;
+            Ssp2 = Ssp2+g1p1-(g2.*x-ex)./s1;
             Sd1sp2 = Sd1sp2-(g1p2+g2).*xsq;
         end
         
@@ -93,7 +93,7 @@ for i = 0:n-1     % right-half ij-plane & j-axis
         Sd4 = Sd4+gp4.*xsq.^4-6*gp3.*xsq.^2.*xsq2+...
               gp2.*(4*xsq.*xsq3+3*xsq2.^2)-gp1.*xsq4;
         if nargout > 5
-            Ssp2 = Ssp2+g1p1-(g2.*x-ex)/s1;
+            Ssp2 = Ssp2+g1p1-(g2.*x-ex)./s1;
             Sd1sp2 = Sd1sp2-(g1p2+g2).*xsq;
         end
     end
@@ -110,12 +110,32 @@ Sd2=2*Sd2.*Cs1 - (s1.*Hsq+(s1.*H).^2).*S - 2*s1.*H.*Sd1;
 Sd3=2*Sd3.*Cs1 - (s1.*Hsq2+3*s1.^2.*H.*Hsq+(s1.*H).^3).*S - 3*(s1.*Hsq+(s1.*H).^2).*Sd1 - 3*s1.*H.*Sd2;
 Sd4=2*Sd4.*Cs1 - (s1.*Hsq3+3*(s1.*Hsq).^2+4*s1.^2.*H.*Hsq2+6*s1.^3.*H.^2.*Hsq+(s1.*H).^4).*S-...
     (4*s1.*Hsq2+12*s1.^2.*H.*Hsq+4*(s1.*H).^3).*Sd1-6*(s1.*Hsq+(s1.*H).^2).*Sd2-4*s1.*H.*Sd3;
+% handle exception: Z(0)=-1, dZ(0)=0, Z(2)=Inf, dZ(2)=Inf.
+if numel(s)==1 && s==0
+    S(:)=-1;
+    Sd1(:)=0; Sd2(:)=0; Sd3(:)=0; Sd4(:)=0;
+elseif numel(s)>1
+    ind = s==0;
+    S(ind)=-1;
+    Sd1(ind)=0; Sd2(ind)=0; Sd3(ind)=0; Sd4(ind)=0;
+end
+
 if nargout > 5
     Cs1p1 = Cs1.*(pi./J./s1);
     Ssp2 = (2*Ssp2 - 1 ./(s1+1) - 1 ./(-s1)).*Cs1p1;
     Sd1sp2 = 2*Sd1sp2.*Cs1p1 - (s1+1).*H.*Ssp2;
+    % handle exception: Z(0)=-1, dZ(0)=0, Z(2)=Inf, dZ(2)=Inf.
+    if numel(s)==1
+        if s==-2
+            Ssp2(:)=-1; Sd1sp2(:)=0;
+        elseif s==0
+            Ssp2(:)=Inf; Sd1sp2(:)=Inf;
+        end
+    elseif numel(s)>1
+        Ssp2(s==-2)=-1; Sd1sp2(s==-2)=0;
+        Ssp2(s==0)=Inf; Sd1sp2(s==0)=Inf;
+    end
 end
-if numel(s) > 1, S(s==0)=-1; Ssp2(s==-2)=-1; end % handle exception: Z(0)=-1.
 end
 
 function test_epstein_zeta
@@ -165,18 +185,18 @@ Sd3_EEG_approx3 = (Sd1_G_Ep - 2*Sd1_G + Sd1_G_Em)/epsi^2;
 Sd3_EFF_approx = (Sd1_E_Fp - 2*Sd1_E + Sd1_E_Fm)/epsi^2;
 
 
-% 3. verify func output again fdm approx
+% 3. verify func output against FDM approx
 fprintf('\nverify your derivatives...\n')
-fprintf('(d/dF)Z(s):\t\t[fdm approx, your output]=[%f, %f], the same?\n',Sd1_F_approx,Sd1_F)
-fprintf('(d^2/dF^2)Z(s):\t\t[fdm approx, your output]=[%f, %f], the same?\n',Sd2_FF_approx,Sd2_F)
-fprintf('(d^3/dE^2dG)Z(s):\t3 different fdm approxs: [%f, %f, %f], your output: %f\n',Sd3_EEG_approx,Sd3_EEG_approx2,Sd3_EEG_approx3,Sd3_EEG)
+fprintf('(d/dF)Z(s):\t\t[FDM approx, your output]=[%f, %f], the same?\n',Sd1_F_approx,Sd1_F)
+fprintf('(d^2/dF^2)Z(s):\t\t[FDM approx, your output]=[%f, %f], the same?\n',Sd2_FF_approx,Sd2_F)
+fprintf('(d^3/dE^2dG)Z(s):\t3 different FDM approxs: [%f, %f, %f], your output: %f\n',Sd3_EEG_approx,Sd3_EEG_approx2,Sd3_EEG_approx3,Sd3_EEG)
 
 % 4. verify derivative equivalence: (d^2/dF^2)Z(s)/4 = (d^2/dEdG)Z(s) and (d^3/dE^2dG)Z(s) = (d^3/dEdF^2)Z(s)/4
 % this test also implicitly verify correctness of the computed Z(s)
 fprintf('\nderivatives equivalence check... (implicitly verify correctness of Z(s))\n')
-fprintf('fdm approx:\t[(d^2/dF^2)Z(s)/4, (d^2/dEdG)Z(s)] = [%f, %f], the same?\n',Sd2_FF_approx/4,Sd2_EG_approx)
+fprintf('FDM approx:\t[(d^2/dF^2)Z(s)/4, (d^2/dEdG)Z(s)] = [%f, %f], the same?\n',Sd2_FF_approx/4,Sd2_EG_approx)
 fprintf('your output:\t[(d^2/dF^2)Z(s)/4, (d^2/dEdG)Z(s)] = [%f, %f] the same? (should be the same as prev line, too)\n',Sd2_F/4,Sd2_EG)
-fprintf('fdm approx:\t[(d^3/dE^2dG)Z(s), (d^3/dEdF^2)Z(s)/4] = [%f, %f] the same?\n',Sd3_EEG_approx,Sd3_EFF_approx/4)
+fprintf('FDM approx:\t[(d^3/dE^2dG)Z(s), (d^3/dEdF^2)Z(s)/4] = [%f, %f] the same?\n',Sd3_EEG_approx,Sd3_EFF_approx/4)
 fprintf('your output:\t[(d^3/dE^2dG)Z(s), (d^3/dEdF^2)Z(s)/4] = [%f, %f] the same? (should be the same as prev line, too)\n',Sd3_EEG,Sd3_EFF/4)
 fprintf('your output:\t[(d^4/dE^2dG^2)Z(s), (d^4/dF^4)Z(s)/16] = [%f, %f] the same?\n',Sd4_EEGG,Sd4_F/16)
 end

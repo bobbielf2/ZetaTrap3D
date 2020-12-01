@@ -252,7 +252,7 @@ if l1>1, u=[u,-l1+1:-1]; v=[v,1:l1-1]; taus=[taus,tau(2:l1)]; end % off-axis cop
 if l1>0, u=[u,-u]; v=[v,-v]; taus = kron([1,1],taus); end % central symmetry copies
 inds = sub2ind(siz,sub1+u,sub2+v);      % kernel indices
 ker(inds) = ker(inds)+taus.*fac(inds); 
-% 2. intermediate layers (symmetric aboutt center)
+% 2. intermediate layers (symmetric about center)
 if l2 > l1
     u=[]; v=[]; % assemble stencil layers l, l1<l<=l2
     for l=l1+1:l2, u=[u,(l:-1:-l+1)]; v=[v,0:l-1,l:-1:1]; end
@@ -283,7 +283,7 @@ u=l1:-1:0; v=0:l1;
 A(:,1:l1+1)=u.^a.*v.^b;
 if l1>0, A(:,1:l1+1)=2*A(:,1:l1+1); end % on-axis pts
 if l1>1, A(:,2:l1)=A(:,2:l1)+2*(-u(2:l1)).^a.*v(2:l1).^b; end % off-axis pts
-% 2. intermediate layers (symmetric aboutt center)
+% 2. intermediate layers (symmetric about center)
 if l2 > l1
     u=[]; v=[]; % assemble stencil layers l, l1<l<=l2
     for l=l1+1:l2, u=[u,l:-1:-l+1]; v=[v,0:l-1,l:-1:1]; end 

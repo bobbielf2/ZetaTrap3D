@@ -40,7 +40,7 @@ Supporting functions:
 
 ### Experimental code
 
-The routine `test_laplace3d_on_quartic_patch_NEW.m`  demonstrates a new (unpublished) ZetaTrap3D quadrature that *only requires the first fundamental form of the geometry* (unlike the original version above that needs higher geometric derivatives.)
+The routines `test_laplace3d_on_quartic_patch_NEW.m`  and `test_helmholtz3d_on_quartic_patch_NEW.m` demonstrate a new (unpublished) ZetaTrap3D quadrature that *only requires the first fundamental form of the geometry* (unlike the original version above that needs higher geometric derivatives.)
 
-This new code performs quadrature correction on a series of diamond stencils $|i|+|j|=l$ where the correction weights have  symmetries shown in the following picture; such a stencil can correct a class of singular integrands of the form "(singular) * (monomial)" for monomials of even power $p$, $2l_1\leq p\leq 2l_2$.
+This new code performs quadrature correction on a series of diamond stencils $|i|+|j|=l$ where the correction weights have  symmetries shown in the following picture; such a stencil can correct a class of singular integrands of the form "(singular) * (monomial)" for monomials of even power $p$, $2l_a\leq p\leq 2l_b$.
 ![](stencil_NEW.png)

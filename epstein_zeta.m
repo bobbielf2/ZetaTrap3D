@@ -36,62 +36,75 @@ end
 % Preprocessing: make quadratic form has unit determinant
 J = sqrt(E.*G-F.^2);
 E = E./J; G = G./J; F = F./J;
-L = L./J; M = M./J; N = N./J;
+if nargout > 1, L = L./J; M = M./J; N = N./J; end
 
 % constants for computing derivatives
+if nargout > 1
 H   = (G.*L+E.*N-2*F.*M)/2;
 K   = L.*N-M.^2;
 Hsq = K - 2*H.^2;
 Hsq2= -2*H.*K-4*H.*Hsq;
 Hsq3= (4*H.^2-2*Hsq).*K-4*Hsq.^2-4*H.*Hsq2;
+end
 
 % Define the quadratic form
-QA      = @(i,j) E*i^2+2*F*i*j+G*j^2;
-QB      = @(i,j) L*i^2+2*M*i*j+N*j^2;
+QA  = @(i,j) E*i^2+2*F*i*j+G*j^2;
+if nargout > 1, QB = @(i,j) L*i^2+2*M*i*j+N*j^2; end
 
 % Determine summation cutoffs based on decay of incomplete gamma func
 lambda = min(min((E+G)/2 - sqrt((E-G).^2+4*F.^2)/2)); % min eigenvalue of Q
 n = floor(sqrt(33/pi./lambda))+3;
 
 % summation, exclude origin
-S=0; Sd1=0; Sd2=0; Sd3=0; Sd4=0;
+S=0; 
+if nargout > 1, Sd1=0; Sd2=0; Sd3=0; Sd4=0; end
 if nargout > 5, Ssp2=0; Sd1sp2 = 0; end
 s1 = s/2; s2 = 1-s1;
 for i = 0:n-1     % right-half ij-plane & j-axis
     for j = 1:ceil(sqrt(n^2-i^2))
         % first quadrant + pos j-axis
-        x = pi*QA(i,j); y = pi*QB(i,j); ex = exp(-x);
-        xsq = y-H.*x; xsq2 = -H.*y-Hsq.*x-H.*xsq;
-        xsq3 = (-Hsq+H.^2).*y-(Hsq2.*x+2*Hsq.*xsq+H.*xsq2);
-        xsq4 = (-Hsq2+3*H.*Hsq-H.^3).*y-(Hsq3.*x+3*Hsq2.*xsq+3*Hsq.*xsq2+H.*xsq3);
-        [g1,g1p1,g1p2,g1p3,g1p4] = incgamma(s1,x);
-        [g2,g2p1,g2p2,g2p3,g2p4] = incgamma(s2,x);
-        gp1=g1p1+g2p1; gp2=g1p2+g2p2; gp3=g1p3+g2p3; gp4=g1p4+g2p4;
-        S   = S+g1+g2;
-        Sd1 = Sd1-gp1.*xsq;
-        Sd2 = Sd2+gp2.*xsq.^2-gp1.*xsq2;
-        Sd3 = Sd3-gp3.*xsq.^3+3*gp2.*xsq.*xsq2-gp1.*xsq3;
-        Sd4 = Sd4+gp4.*xsq.^4-6*gp3.*xsq.^2.*xsq2+...
-              gp2.*(4*xsq.*xsq3+3*xsq2.^2)-gp1.*xsq4;
+        if nargout > 1
+            x = pi*QA(i,j); y = pi*QB(i,j); ex = exp(-x);
+            xsq = y-H.*x; xsq2 = -H.*y-Hsq.*x-H.*xsq;
+            xsq3 = (-Hsq+H.^2).*y-(Hsq2.*x+2*Hsq.*xsq+H.*xsq2);
+            xsq4 = (-Hsq2+3*H.*Hsq-H.^3).*y-(Hsq3.*x+3*Hsq2.*xsq+3*Hsq.*xsq2+H.*xsq3);
+            [g1,g1p1,g1p2,g1p3,g1p4] = incgamma(s1,x);
+            [g2,g2p1,g2p2,g2p3,g2p4] = incgamma(s2,x);
+            gp1=g1p1+g2p1; gp2=g1p2+g2p2; gp3=g1p3+g2p3; gp4=g1p4+g2p4;
+            S   = S+g1+g2;
+            Sd1 = Sd1-gp1.*xsq;
+            Sd2 = Sd2+gp2.*xsq.^2-gp1.*xsq2;
+            Sd3 = Sd3-gp3.*xsq.^3+3*gp2.*xsq.*xsq2-gp1.*xsq3;
+            Sd4 = Sd4+gp4.*xsq.^4-6*gp3.*xsq.^2.*xsq2+...
+                gp2.*(4*xsq.*xsq3+3*xsq2.^2)-gp1.*xsq4;
+        else
+            x = pi*QA(i,j);
+            S = S+incgamma(s1,x)+incgamma(s2,x);
+        end
         if nargout > 5
             Ssp2 = Ssp2+g1p1-(g2.*x-ex)./s1;
             Sd1sp2 = Sd1sp2-(g1p2+g2).*xsq;
         end
         
         % fourth quadrant + pos i-axis
-        x = pi*QA(j,-i); y = pi*QB(j,-i); ex = exp(-x);
-        xsq = y-H.*x; xsq2 = -H.*y-Hsq.*x-H.*xsq;
-        xsq3 = (-Hsq+H.^2).*y-Hsq2.*x-2*Hsq.*xsq-H.*xsq2;
-        xsq4 = (-Hsq2+3*H.*Hsq-H.^3).*y-(Hsq3.*x+3*Hsq2.*xsq+3*Hsq.*xsq2+H.*xsq3);
-        [g1,g1p1,g1p2,g1p3,g1p4] = incgamma(s1,x);
-        [g2,g2p1,g2p2,g2p3,g2p4] = incgamma(s2,x);
-        gp1=g1p1+g2p1; gp2=g1p2+g2p2; gp3=g1p3+g2p3; gp4=g1p4+g2p4;
-        S   = S+g1+g2;
-        Sd1 = Sd1-gp1.*xsq;
-        Sd2 = Sd2+gp2.*xsq.^2-gp1.*xsq2;
-        Sd3 = Sd3-gp3.*xsq.^3+3*gp2.*xsq.*xsq2-gp1.*xsq3;
-        Sd4 = Sd4+gp4.*xsq.^4-6*gp3.*xsq.^2.*xsq2+...
-              gp2.*(4*xsq.*xsq3+3*xsq2.^2)-gp1.*xsq4;
+        if nargout > 1
+            x = pi*QA(j,-i); y = pi*QB(j,-i); ex = exp(-x);
+            xsq = y-H.*x; xsq2 = -H.*y-Hsq.*x-H.*xsq;
+            xsq3 = (-Hsq+H.^2).*y-Hsq2.*x-2*Hsq.*xsq-H.*xsq2;
+            xsq4 = (-Hsq2+3*H.*Hsq-H.^3).*y-(Hsq3.*x+3*Hsq2.*xsq+3*Hsq.*xsq2+H.*xsq3);
+            [g1,g1p1,g1p2,g1p3,g1p4] = incgamma(s1,x);
+            [g2,g2p1,g2p2,g2p3,g2p4] = incgamma(s2,x);
+            gp1=g1p1+g2p1; gp2=g1p2+g2p2; gp3=g1p3+g2p3; gp4=g1p4+g2p4;
+            S   = S+g1+g2;
+            Sd1 = Sd1-gp1.*xsq;
+            Sd2 = Sd2+gp2.*xsq.^2-gp1.*xsq2;
+            Sd3 = Sd3-gp3.*xsq.^3+3*gp2.*xsq.*xsq2-gp1.*xsq3;
+            Sd4 = Sd4+gp4.*xsq.^4-6*gp3.*xsq.^2.*xsq2+...
+                gp2.*(4*xsq.*xsq3+3*xsq2.^2)-gp1.*xsq4;
+        else
+            x = pi*QA(j,-i);
+            S = S+incgamma(s1,x)+incgamma(s2,x);
+        end
         if nargout > 5
             Ssp2 = Ssp2+g1p1-(g2.*x-ex)./s1;
             Sd1sp2 = Sd1sp2-(g1p2+g2).*xsq;
@@ -105,19 +118,21 @@ else
     Cs1 = (pi./J).^s1 ./ igamma(s1,0);
 end
 S  = (2*S - 1 ./s1 - 1 ./s2).*Cs1;
-Sd1=2*Sd1.*Cs1 - s1.*H.*S;
-Sd2=2*Sd2.*Cs1 - (s1.*Hsq+(s1.*H).^2).*S - 2*s1.*H.*Sd1;
-Sd3=2*Sd3.*Cs1 - (s1.*Hsq2+3*s1.^2.*H.*Hsq+(s1.*H).^3).*S - 3*(s1.*Hsq+(s1.*H).^2).*Sd1 - 3*s1.*H.*Sd2;
-Sd4=2*Sd4.*Cs1 - (s1.*Hsq3+3*(s1.*Hsq).^2+4*s1.^2.*H.*Hsq2+6*s1.^3.*H.^2.*Hsq+(s1.*H).^4).*S-...
-    (4*s1.*Hsq2+12*s1.^2.*H.*Hsq+4*(s1.*H).^3).*Sd1-6*(s1.*Hsq+(s1.*H).^2).*Sd2-4*s1.*H.*Sd3;
+if nargout > 1
+    Sd1=2*Sd1.*Cs1 - s1.*H.*S;
+    Sd2=2*Sd2.*Cs1 - (s1.*Hsq+(s1.*H).^2).*S - 2*s1.*H.*Sd1;
+    Sd3=2*Sd3.*Cs1 - (s1.*Hsq2+3*s1.^2.*H.*Hsq+(s1.*H).^3).*S - 3*(s1.*Hsq+(s1.*H).^2).*Sd1 - 3*s1.*H.*Sd2;
+    Sd4=2*Sd4.*Cs1 - (s1.*Hsq3+3*(s1.*Hsq).^2+4*s1.^2.*H.*Hsq2+6*s1.^3.*H.^2.*Hsq+(s1.*H).^4).*S-...
+        (4*s1.*Hsq2+12*s1.^2.*H.*Hsq+4*(s1.*H).^3).*Sd1-6*(s1.*Hsq+(s1.*H).^2).*Sd2-4*s1.*H.*Sd3;
+end
 % handle exception: Z(0)=-1, dZ(0)=0, Z(2)=Inf, dZ(2)=Inf.
 if numel(s)==1 && s==0
     S(:)=-1;
-    Sd1(:)=0; Sd2(:)=0; Sd3(:)=0; Sd4(:)=0;
+    if nargout > 1, Sd1(:)=0; Sd2(:)=0; Sd3(:)=0; Sd4(:)=0; end
 elseif numel(s)>1
     ind = s==0;
     S(ind)=-1;
-    Sd1(ind)=0; Sd2(ind)=0; Sd3(ind)=0; Sd4(ind)=0;
+    if nargout > 1, Sd1(ind)=0; Sd2(ind)=0; Sd3(ind)=0; Sd4(ind)=0; end
 end
 
 if nargout > 5

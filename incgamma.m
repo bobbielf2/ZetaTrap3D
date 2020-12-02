@@ -72,10 +72,10 @@ if isreal(s)
                 gsp4 = ((s+3).*gsp3+ex)./x;
             end
         end
-    else    % handle numel(s)>1 and numel(x)==1 case
+    else    % handle s>0 case or numel(s)>1 and numel(x)==1 case
         % TODO: this currently only works if all(s>=0)
         gs = gammainc(x,s,'upper').*gamma(s).*x.^(-s);
-        gs(s==0) = expint(x); % correct where s=0
+        if numel(s)>1, gs(s==0) = expint(x); end % correct where s=0
         if nargout > 1
             ex = exp(-x);
             gsp1 = (s.*gs+ex)./x;

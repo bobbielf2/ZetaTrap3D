@@ -8,7 +8,8 @@ Let's consider a Laplace or Helmholtz layer potential from a smooth surface to a
 
 Author: Bowei Wu, 2020/6/28
 
-Also contain supporting functions modified from Alex Barnett's [BIE3D](https://github.com/ahbarnett/BIE3D) package
+- Also contain supporting functions modified from Alex Barnett's [BIE3D](https://github.com/ahbarnett/BIE3D) package
+- See also the related [ZetaTrap2D](https://github.com/bobbielf2/ZetaTrap2D) code for contour integrals.
 
 ### Note on MATLAB version
 
@@ -36,7 +37,5 @@ Supporting functions:
 * `Helm3dSLPmat.m`, `Helm3dDLPmat.m` : construct matrices associated with Helmholtz layer potentials using native quadratures
 * `quadr_doubleptr.m`, `wobblytorus.m`, `showsurf.m` are (modified) functions from [BIE3D](https://github.com/ahbarnett/BIE3D)
 
-### Notes
 
-Also see the related [ZetaTrap2D](https://github.com/bobbielf2/ZetaTrap2D) code for contour integrals.
 

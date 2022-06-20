@@ -1,5 +1,7 @@
 # ZetaTrap3D: High-order locally corrected trapezoidal rule for Laplace and Helmholtz layer potentials on surfaces in 3D
 
+**NOTE:** see [ZetaTrap3D_Unified](https://github.com/bobbielf2/ZetaTrap3D_Unified) for a generalization of this code to higher orders. (Up to 9th order implemented.)
+
 This is the MATLAB code accompanying the manuscript: 
 
 * B. Wu and P.G. Martinsson, Corrected Trapezoidal Rules for Boundary Integral Equations in Three Dimensions (2020, [arXiv:2007.02512](https://arxiv.org/abs/2007.02512))
